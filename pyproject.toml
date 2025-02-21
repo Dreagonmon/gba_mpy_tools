@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools >= 61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gba-mpy-tools"
+description = "Tools for GBA"
+version = "0.0.1"
+license = { text = "MIT License" }
+requires-python = ">=3.11"
+dependencies = [
+    "mpy-cross >= 1",
+    "littlefs-python >= 0.12",
+]
+readme = "README.md"
+authors = [
+  {name = "Dreagonmon", email = "531486058@qq.com"},
+]
+
+[project.scripts]
+gbampy = "gba_mpy_tools.cli:_start_"
+
+[tool.setuptools.packages.find]
+where = ["."]  # ["."] by default
+include = ["gba_mpy_tools"]  # ["*"] by default
+exclude = []  # empty by default
+namespaces = false  # true by default
