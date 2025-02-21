@@ -4,6 +4,9 @@ target_dir = "/"                                  # path in the ROM, normally "/
 ignore-pattern = [
     "**/__pycache__",                             # python cache files
     "**/.*",                                      # hidden files
+    "**/*.gba",                                   # gba files
+    "**/*.sav",                                   # sav files
+    "**/*.sgm",                                   # sgm files
 ]
 
 [mpy-cross]

@@ -46,7 +46,9 @@ def main():
     cfg = Config(args.config_path)
     chdir(cfg.config_file_dir)
     if args.action == "list":
-        m_action.list_files(cfg)
+        file_list = m_action.list_files(cfg)
+        for item in file_list:
+            print(item.target, "    -> is_dir:", item.is_dir, "compile:", item.compile)
     elif args.action == "build":
         m_action.build(cfg)
     elif args.action == "run":
