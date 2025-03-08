@@ -4,6 +4,8 @@ from gba_mpy_tools.wrap_mpy_cross import MpyCross
 from gba_mpy_tools.wrap_gba_emulator import GBAEmulator
 from pathlib import Path, PurePosixPath
 from typing import NamedTuple
+from sys import path as import_path
+from importlib import import_module
 
 class FileItemPair(NamedTuple):
     source: Path
@@ -45,12 +47,49 @@ def list_files(cfg: Config):
     """
     return __walk_dir_with_config(cfg.project_source_dir, cfg)
 
+def execute_before_build_script(cfg: Config):
+    """Execute before build script.
+
+    Args:
+        cfg (Config): Config info object.
+    """
+    if cfg.project_before_build[0]:
+        # append import path
+        if cfg.config_file_dir not in import_path:
+            import_path.append(str(cfg.config_file_dir))
+        # import module
+        module = import_module(cfg.project_before_build[0])
+        if cfg.project_before_build[1]:
+            # execute function
+            func = getattr(module, cfg.project_before_build[1])
+            if callable(func):
+                func(cfg)
+
+def execute_after_build_script(cfg: Config):
+    """Execute after build script.
+
+    Args:
+        cfg (Config): Config info object.
+    """
+    if cfg.project_after_build[0]:
+        # append import path
+        if cfg.config_file_dir not in import_path:
+            import_path.append(str(cfg.config_file_dir))
+        # import module
+        module = import_module(cfg.project_after_build[0])
+        if cfg.project_after_build[1]:
+            # execute function
+            func = getattr(module, cfg.project_after_build[1])
+            if callable(func):
+                func(cfg)
+
 def build(cfg: Config):
     """Build the ROM with files.
 
     Args:
         cfg (Config): Config info object.
     """
+    # build littlefs file system
     file_list = list_files(cfg)
     rom = GBAMicroPythonRom.load(cfg.gba_template)
     rom.mkfs(512)
@@ -74,6 +113,5 @@ def run(cfg: Config):
     Args:
         cfg (Config): Config info object.
     """
-    build(cfg)
     gba_emu = GBAEmulator(cfg)
     gba_emu.run(cfg.gba_output)

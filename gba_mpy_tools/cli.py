@@ -48,10 +48,27 @@ def main():
     if args.action == "list":
         file_list = m_action.list_files(cfg)
         for item in file_list:
-            print(item.target, "    -> is_dir:", item.is_dir, "compile:", item.compile)
+            print(item.target, "    -> is_dir:", item.is_dir, ",", "compile:", item.compile)
     elif args.action == "build":
+        print()
+        print("========================================")
+        print("Execute before build script...")
+        print("========================================")
+        m_action.execute_before_build_script(cfg)
+        print()
+        print("========================================")
+        print("Building ROM...")
+        print("========================================")
         m_action.build(cfg)
+        print()
+        print("========================================")
+        print("Execute after build script...")
+        print("========================================")
+        m_action.execute_after_build_script(cfg)
     elif args.action == "run":
+        m_action.execute_before_build_script(cfg)
+        m_action.build(cfg)
+        m_action.execute_after_build_script(cfg)
         m_action.run(cfg)
 
 def _start_():

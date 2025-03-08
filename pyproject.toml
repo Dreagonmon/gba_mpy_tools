@@ -7,7 +7,7 @@ name = "gba-mpy-tools"
 description = "Tools for GBA"
 version = "0.0.1"
 license = { text = "MIT License" }
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = [
     "mpy-cross >= 1",
     "littlefs-python >= 0.12",

@@ -4,17 +4,20 @@ from tomllib import load as load_toml
 from shlex import split as sh_split
 
 DEFAULT_CONFIG_FILENAME = ".gbampy.toml"
+LOCAL_CONFIG_FILENAME = ".gbampy.local.toml"
 
 ProjectSectionDict = TypedDict("ProjectSection", {
     "source_dir": NotRequired[str],
     "target_dir": NotRequired[str],
-    "ignore-pattern": NotRequired[list[str]],
+    "ignore_pattern": NotRequired[list[str]],
+    "before_build": NotRequired[str],
+    "after_build": NotRequired[str],
 })
 MpyCorssSectionDict = TypedDict("MpyCorssSection", {
     "compile": NotRequired[bool],
     "path": NotRequired[str],
     "params": NotRequired[str],
-    "ignore-pattern": NotRequired[list[str]],
+    "ignore_pattern": NotRequired[list[str]],
 })
 GBASectionDict = TypedDict("ProjectSection", {
     "template": NotRequired[str],
@@ -28,6 +31,22 @@ ConfigDict = TypedDict("ConfigDict",{
     "gba": NotRequired[GBASectionDict],
 })
 
+def deep_update_dict(dest: dict, update_from: dict):
+    for k, v in update_from.items():
+        if k in dest and isinstance(v, dict):
+            deep_update_dict(dest[k], v)
+        else:
+            dest[k] = v
+
+def parse_script_module_and_function(module_function_str: str):
+    module_name = module_function_str
+    function_name = ""
+    split_pos = module_function_str.find(":")
+    if split_pos >= 0:
+        module_name = module_function_str[:split_pos]
+        function_name = module_function_str[split_pos+1:]
+    return module_name, function_name
+
 class Config():
     def __init__(self, config_file_or_dir: str | Path = "."):
         self.__cfg: ConfigDict = dict()
@@ -38,10 +57,16 @@ class Config():
         else:
             config_path = temp_path
             self.__cfgdir = temp_path.parent
+        # load project config
         if config_path.exists() and config_path.is_file():
-            # load config
             with open(config_path, "rb") as stream:
                 self.__cfg = load_toml(stream)
+        # load local config
+        local_config_path = self.__cfgdir.joinpath(LOCAL_CONFIG_FILENAME)
+        if local_config_path.exists() and local_config_path.is_file():
+            with open(local_config_path, "rb") as stream:
+                local_cfg = load_toml(stream)
+                deep_update_dict(self.__cfg, local_cfg)
     
     def replace_config(self, cfg: ConfigDict):
         self.__cfg = cfg
@@ -87,7 +112,19 @@ class Config():
     @property
     def project_ignore_pattern(self) -> list[str]:
         prj: ProjectSectionDict = self.__cfg.setdefault("project", dict())
-        return prj.setdefault("ignore-pattern", [])
+        return prj.setdefault("ignore_pattern", [])
+    
+    @property
+    def project_before_build(self):
+        prj: ProjectSectionDict = self.__cfg.setdefault("project", dict())
+        before_build_str = prj.setdefault("before_build", ".")
+        return parse_script_module_and_function(before_build_str)
+    
+    @property
+    def project_after_build(self):
+        prj: ProjectSectionDict = self.__cfg.setdefault("project", dict())
+        after_build_str = prj.setdefault("after_build", ".")
+        return parse_script_module_and_function(after_build_str)
     
     @property
     def mpy_cross_compile(self):
@@ -107,7 +144,7 @@ class Config():
     @property
     def mpy_cross_ignore_pattern(self) -> list[str]:
         mpyc: MpyCorssSectionDict = self.__cfg.setdefault("mpy-cross", dict())
-        return mpyc.setdefault("ignore-pattern", [])
+        return mpyc.setdefault("ignore_pattern", [])
 
     @property
     def gba_template(self):
